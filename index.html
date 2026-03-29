@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>0/1 Knapsack — Interactive Teaching Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0c10;
+  --surface:#111318;
+  --surface2:#181c24;
+  --surface3:#1e2330;
+  --border:#252a38;
+  --accent:#00e5ff;
+  --accent2:#7c3aed;
+  --accent3:#f59e0b;
+  --accent4:#10b981;
+  --text:#e8eaf2;
+  --text2:#8891a8;
+  --text3:#4a5268;
+  --cell-empty:#151820;
+  --cell-current:#1a2540;
+  --cell-selected:#0d2e1a;
+  --cell-path:#1a2a0d;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --radius:8px;
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;overflow-x:hidden}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Header ── */
+header{
+  padding:14px 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;
+}
+header h1{font-size:18px;font-weight:800;letter-spacing:-.5px;color:var(--accent)}
+header h1 span{color:var(--text2);font-weight:400}
+.badge{background:var(--surface3);border:1px solid var(--border);padding:2px 10px;border-radius:999px;font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+/* ── Main Layout ── */
+.main{display:flex;flex:1;overflow:hidden}
+.left-panel{
+  width:430px;min-width:430px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  padding:0;
+  display:flex;flex-direction:column;
+  gap:0;
+}
+.right-panel{
+  flex:1;
+  overflow:auto;
+  padding:20px;
+  display:flex;flex-direction:column;gap:20px;
+}
+
+/* ── Sections ── */
+.section{
+  border-bottom:1px solid var(--border);
+  padding:16px 18px;
+}
+.section:last-child{border-bottom:none}
+.section-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Cards ── */
+.card{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:10px;
+}
+.card:last-child{margin-bottom:0}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface3);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn:hover{background:var(--surface);border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn.primary:hover{background:#00b8cc;border-color:#00b8cc}
+.btn.danger{background:#2d1111;border-color:#7f1d1d;color:#f87171}
+.btn.danger:hover{background:#3d1515;border-color:#ef4444}
+.btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn-row{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ── Presets ── */
+.preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.preset-btn{
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface3);color:var(--text2);font-size:11px;font-family:var(--mono);
+  cursor:pointer;transition:all .15s;
+}
+.preset-btn:hover{border-color:var(--accent3);color:var(--accent3)}
+
+/* ── Input fields ── */
+.input-group{margin-bottom:10px}
+.input-group label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-family:var(--mono)}
+.input-group input,.input-group textarea{
+  width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;
+  padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;
+  transition:border-color .15s;
+}
+.input-group input:focus,.input-group textarea:focus{border-color:var(--accent)}
+.input-group textarea{resize:vertical;min-height:52px}
+
+/* ── Slider ── */
+.slider-row{display:flex;align-items:center;gap:10px}
+input[type=range]{
+  flex:1;accent-color:var(--accent);height:4px;border-radius:2px;cursor:pointer;
+}
+.slider-label{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:36px;text-align:center}
+
+/* ── Step counter ── */
+.step-counter{
+  font-family:var(--mono);font-size:12px;color:var(--text2);
+  background:var(--surface3);border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;text-align:center;
+}
+.step-counter span{color:var(--accent);font-weight:700}
+
+/* ── Explanation box ── */
+.explanation-box{
+  background:var(--surface3);border:1px solid var(--border);border-left:3px solid var(--accent);
+  border-radius:var(--radius);padding:10px 14px;
+  font-size:12px;line-height:1.6;color:var(--text);
+  min-height:52px;transition:all .2s;font-family:var(--mono);
+}
+.explanation-box .highlight{color:var(--accent);font-weight:700}
+.explanation-box .val{color:var(--accent3);font-weight:700}
+.explanation-box .action{color:var(--accent4);font-weight:700}
+
+/* ── Items visual ── */
+.items-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.item-box{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:56px;height:56px;border-radius:8px;border:2px solid var(--border);
+  background:var(--surface3);transition:all .2s;cursor:default;position:relative;
+  font-family:var(--mono);
+}
+.item-box .item-idx{font-size:9px;color:var(--text3);position:absolute;top:3px;left:5px}
+.item-box .item-val{font-size:14px;font-weight:700;color:var(--accent3)}
+.item-box .item-wt{font-size:10px;color:var(--text2);margin-top:1px}
+.item-box.current{border-color:var(--accent);background:var(--cell-current);box-shadow:0 0 12px rgba(0,229,255,.2)}
+.item-box.included{border-color:var(--accent4);background:var(--cell-selected)}
+.item-box.ratio-sorted{border-color:var(--accent3)}
+.ratio-label{font-size:9px;color:var(--accent3);position:absolute;bottom:2px;right:4px}
+
+/* ── DP Table ── */
+.dp-wrapper{overflow:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.dp-table{border-collapse:collapse;font-family:var(--mono)}
+.dp-table th,.dp-table td{
+  width:44px;min-width:44px;height:38px;text-align:center;
+  border:1px solid var(--border);font-size:12px;
+  transition:background .18s,color .18s,transform .15s;
+}
+.dp-table th{
+  background:var(--surface3);color:var(--text2);font-weight:700;font-size:10px;
+  position:sticky;
+}
+.dp-table th.row-h{position:sticky;left:0;z-index:2;background:var(--surface3)}
+.dp-table td{background:var(--cell-empty);color:var(--text3)}
+.dp-table td.computed{background:var(--surface2);color:var(--text)}
+.dp-table td.current{background:var(--cell-current)!important;color:var(--accent)!important;font-weight:700;box-shadow:inset 0 0 0 2px var(--accent)}
+.dp-table td.path{background:var(--cell-path)!important;color:var(--accent4)!important;font-weight:700}
+.dp-table td.selected{background:var(--cell-selected)!important;color:var(--accent4)!important;font-weight:700;box-shadow:inset 0 0 0 2px var(--accent4)}
+.dp-table td.highlight{background:#1a1a2e!important;color:var(--accent2)!important;font-weight:700}
+.dp-table td.pop{animation:cellPop .2s ease}
+@keyframes cellPop{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* ── Pseudocode ── */
+.pseudo-panel{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+}
+.pseudo-header{
+  background:var(--surface3);border-bottom:1px solid var(--border);
+  padding:8px 14px;font-size:10px;color:var(--text2);font-family:var(--mono);
+  display:flex;justify-content:space-between;
+}
+.pseudo-lines{padding:8px 0}
+.pseudo-line{
+  display:flex;gap:0;font-family:var(--mono);font-size:11.5px;padding:3px 14px;
+  line-height:1.6;transition:background .15s;position:relative;cursor:help;
+}
+.pseudo-line:hover{background:var(--surface3)}
+.pseudo-line.active{background:#0d2040;border-left:3px solid var(--accent);padding-left:11px}
+.pseudo-line .ln{color:var(--text3);min-width:22px;user-select:none}
+.pseudo-line .code{color:var(--text);white-space:pre}
+.pseudo-line .kw{color:#c084fc}
+.pseudo-line .fn{color:var(--accent)}
+.pseudo-line .cm{color:var(--text3);font-style:italic}
+.pseudo-line .nm{color:var(--accent3)}
+.tooltip-box{
+  display:none;position:absolute;left:100%;top:0;z-index:200;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:8px 12px;font-size:11px;color:var(--text);max-width:240px;line-height:1.5;
+  box-shadow:var(--shadow);white-space:normal;
+}
+.pseudo-line:hover .tooltip-box{display:block}
+
+/* ── Complexity Chart ── */
+.chart-wrap{position:relative;width:100%}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;font-size:11px;font-family:var(--mono)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+
+/* ── History Table ── */
+.history-wrap{max-height:200px;overflow-y:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.history-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.history-table th{
+  background:var(--surface3);color:var(--text2);padding:6px 10px;
+  text-align:left;position:sticky;top:0;z-index:1;font-size:10px;
+}
+.history-table td{padding:5px 10px;border-top:1px solid var(--border);color:var(--text2);cursor:pointer}
+.history-table tr:hover td{background:var(--surface3);color:var(--text)}
+.history-table tr.current-row td{background:var(--cell-current);color:var(--accent)}
+
+/* ── Greedy comparison ── */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare-card{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px;
+}
+.compare-card h4{font-size:11px;font-weight:700;margin-bottom:8px;letter-spacing:.5px}
+.compare-card.fail h4{color:#f87171}
+.compare-card.win h4{color:var(--accent4)}
+.item-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--surface3);border:1px solid var(--border);border-radius:4px;
+  padding:3px 8px;font-family:var(--mono);font-size:10px;margin:2px;
+}
+.item-tag.active{border-color:var(--accent3);color:var(--accent3)}
+.item-tag.dp-pick{border-color:var(--accent4);color:var(--accent4)}
+.total-tag{
+  margin-top:8px;font-family:var(--mono);font-size:13px;font-weight:700;
+  padding:4px 0;border-top:1px solid var(--border);
+}
+.total-tag.fail{color:#f87171}
+.total-tag.win{color:var(--accent4)}
+
+/* ── Op counters ── */
+.op-counters{display:flex;gap:8px;flex-wrap:wrap}
+.op-chip{
+  background:var(--surface3);border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;font-family:var(--mono);font-size:11px;
+  display:flex;flex-direction:column;align-items:center;gap:1px;min-width:80px;
+}
+.op-chip .op-val{font-size:16px;font-weight:700;color:var(--accent)}
+.op-chip .op-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+
+/* ── Sorting vis ── */
+.sort-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:8px}
+.sort-bar{
+  flex:1;background:var(--surface3);border-radius:4px 4px 0 0;transition:height .3s,background .2s;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;
+  font-family:var(--mono);font-size:9px;color:var(--text3);position:relative;cursor:default;
+}
+.sort-bar.highlighted{background:var(--accent3);color:#000}
+.sort-bar .bar-label{
+  position:absolute;top:-18px;font-size:9px;color:var(--text2);white-space:nowrap;
+}
+
+/* ── Result banner ── */
+.result-banner{
+  background:linear-gradient(135deg,#0a2e1a,#0d3320);
+  border:1px solid var(--accent4);border-radius:var(--radius);
+  padding:14px 18px;display:flex;align-items:center;gap:14px;
+  font-family:var(--mono);
+}
+.result-value{font-size:28px;font-weight:700;color:var(--accent4)}
+.result-detail{font-size:12px;color:var(--text2);line-height:1.6}
+.result-detail b{color:var(--text)}
+
+/* ── Progress bar ── */
+.progress-bar{width:100%;height:3px;background:var(--surface3);border-radius:2px;margin-bottom:12px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s;border-radius:2px}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+/* ── Responsive ── */
+@media(max-width:980px){
+  .main{flex-direction:column}
+  .left-panel{width:100%;min-width:unset;border-right:none;border-bottom:1px solid var(--border)}
+  .compare-grid{grid-template-columns:1fr}
+}
+
+/* ── Collapsible ── */
+.collapsible-btn{
+  width:100%;text-align:left;background:transparent;border:none;
+  color:var(--text2);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:14px 18px 0;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:var(--sans);
+}
+.collapsible-btn .chevron{transition:transform .2s;color:var(--text3)}
+.collapsible-btn.open .chevron{transform:rotate(90deg)}
+.collapsible-content{padding:0 18px;overflow:hidden;max-height:0;transition:max-height .3s,padding .3s}
+.collapsible-content.open{max-height:4000px;padding:12px 18px 16px}
+
+/* ── Brute Force ── */
+.bf-section{
+  border:1px solid #3d2a00;background:linear-gradient(135deg,#1a1200,#120d00);
+  border-radius:var(--radius);padding:14px;margin-bottom:10px;
+}
+.bf-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.bf-title::after{content:'';flex:1;height:1px;background:#3d2a00}
+.bf-subset-grid{
+  display:flex;flex-wrap:wrap;gap:4px;min-height:44px;
+  border:1px solid #3d2a00;border-radius:6px;padding:8px;background:#0d0900;
+  margin-bottom:8px;
+}
+.bf-subset-item{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 7px;border-radius:4px;border:1px solid #3d2a00;
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  transition:all .2s;
+}
+.bf-subset-item.active{border-color:var(--accent3);color:var(--accent3);background:#1a1000;box-shadow:0 0 8px rgba(245,158,11,.2)}
+.bf-subset-item.valid{border-color:var(--accent4);color:var(--accent4);background:#0a1a10}
+.bf-subset-item.best{border-color:#fff;color:#fff;background:#1a2a10;box-shadow:0 0 10px rgba(16,185,129,.4)}
+.bf-subset-item.invalid{border-color:#7f1d1d;color:#f87171;background:#1a0808;opacity:.6}
+.bf-tree-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-family:var(--mono);font-size:11px;border-bottom:1px solid #1a1200}
+.bf-tree-row:last-child{border-bottom:none}
+.bf-tree-row .bf-idx{color:var(--text3);min-width:28px;font-size:10px}
+.bf-tree-row .bf-bits{color:var(--accent3);min-width:80px;letter-spacing:2px}
+.bf-tree-row .bf-val{color:var(--accent4);min-width:50px}
+.bf-tree-row .bf-wt{color:var(--text2);min-width:50px}
+.bf-tree-row .bf-status{font-size:10px}
+.bf-tree-row.bf-current{background:#1a1200;border-radius:4px;padding:3px 6px}
+.bf-tree-row.bf-best-row .bf-val{color:#fff;font-weight:700}
+.bf-tree-wrap{max-height:220px;overflow-y:auto;border:1px solid #3d2a00;border-radius:6px;padding:6px;background:#0d0900;margin-bottom:8px}
+.bf-stat-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.bf-chip{
+  background:#0d0900;border:1px solid #3d2a00;border-radius:6px;
+  padding:5px 10px;font-family:var(--mono);font-size:10px;
+  display:flex;flex-direction:column;align-items:center;min-width:72px;
+}
+.bf-chip .bf-cv{font-size:15px;font-weight:700;color:var(--accent3)}
+.bf-chip .bf-cl{font-size:8px;color:#5a4a28;text-transform:uppercase;letter-spacing:1px}
+.bf-result-banner{
+  background:linear-gradient(135deg,#1a1200,#0d0e00);
+  border:1px solid var(--accent3);border-radius:var(--radius);
+  padding:10px 14px;display:flex;align-items:center;gap:12px;
+  font-family:var(--mono);margin-top:6px;
+}
+.bf-result-val{font-size:24px;font-weight:700;color:var(--accent3)}
+.bf-vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.vs-card{border-radius:var(--radius);padding:10px 12px;border:1px solid var(--border)}
+.vs-card.dp-card{background:#0a1a10;border-color:var(--accent4)}
+.vs-card.bf-card{background:#1a1200;border-color:var(--accent3)}
+.vs-card h5{font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:6px}
+.vs-card.dp-card h5{color:var(--accent4)}
+.vs-card.bf-card h5{color:var(--accent3)}
+.vs-stat{font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:2px}
+.vs-stat b{color:var(--text)}
+.bf-progress-bar{width:100%;height:4px;background:#1a1200;border-radius:2px;margin-bottom:8px;overflow:hidden}
+.bf-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent3),#ef4444);transition:width .15s;border-radius:2px}
+.chart-legend-bf{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;font-size:11px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Knapsack<span>.dp</span></h1>
+  <div class="badge">0/1 Knapsack Algorithm</div>
+  <div class="badge" id="complexity-badge">O(n·W)</div>
+  <div style="flex:1"></div>
+  <div class="badge" id="header-step">Step 0 / 0</div>
+</header>
+
+<div class="main">
+<!-- ════════════ LEFT PANEL ════════════ -->
+<div class="left-panel">
+
+  <!-- INPUT -->
+  <div class="section">
+    <div class="section-title">Input</div>
+
+    <div class="preset-row" id="preset-row">
+      <button class="preset-btn" onclick="applyPreset('small')">Small Example</button>
+      <button class="preset-btn" onclick="applyPreset('greedyfail')">Greedy Fails</button>
+      <button class="preset-btn" onclick="applyPreset('maxcap')">Max Capacity</button>
+      <button class="preset-btn" onclick="applyPreset('worst')">⚠ Worst Case</button>
+    </div>
+
+    <div class="input-group">
+      <label>Values (comma-separated)</label>
+      <input type="text" id="inp-values" value="3,4,5,6"/>
+    </div>
+    <div class="input-group">
+      <label>Weights (comma-separated)</label>
+      <input type="text" id="inp-weights" value="2,3,4,5"/>
+    </div>
+    <div class="input-group">
+      <label>Capacity (W)</label>
+      <input type="text" id="inp-cap" value="5"/>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="buildSolution()">▶ Build Steps</button>
+      <button class="btn danger" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- PLAYBACK -->
+  <div class="section">
+    <div class="section-title">Playback</div>
+    <div class="step-counter" id="step-display">Step <span id="sc-cur">0</span> / <span id="sc-tot">0</span></div>
+    <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="btn-row" style="margin-bottom:10px">
+      <button class="btn" id="btn-prev" onclick="stepBack()" disabled>‹ Prev</button>
+      <button class="btn" id="btn-next" onclick="stepForward()" disabled>Next ›</button>
+      <button class="btn primary" id="btn-play" onclick="togglePlay()" disabled>▶ Play</button>
+      <button class="btn" id="btn-end" onclick="jumpToEnd()" disabled>⇥ End</button>
+    </div>
+    <div class="slider-row">
+      <span style="font-size:11px;color:var(--text2)">Speed</span>
+      <input type="range" id="speed-slider" min="0.25" max="4" step="0.25" value="1" oninput="updateSpeed(this.value)"/>
+      <span class="slider-label" id="speed-lbl">1×</span>
+    </div>
+  </div>
+
+  <!-- STEP EXPLANATION -->
+  <div class="section">
+    <div class="section-title">Step Explanation</div>
+    <div class="explanation-box" id="exp-box">Build steps to begin the walkthrough…</div>
+  </div>
+
+  <!-- PSEUDOCODE -->
+  <button class="collapsible-btn open" id="col-pseudo" onclick="toggleCollapsible('pseudo')">
+    <span class="chevron">▶</span> Pseudocode
+  </button>
+  <div class="collapsible-content open" id="col-pseudo-content">
+    <div class="pseudo-panel" id="pseudo-panel"></div>
+  </div>
+
+  <!-- SORTING INTUITION -->
+  <button class="collapsible-btn open" id="col-sort" onclick="toggleCollapsible('sort')">
+    <span class="chevron">▶</span> Sorting Intuition (Value/Weight Ratio)
+  </button>
+  <div class="collapsible-content open" id="col-sort-content">
+    <div class="card">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">
+        Sorting items by <b style="color:var(--accent3)">v/w ratio</b> gives greedy intuition but is <b style="color:#f87171">NOT optimal</b> for 0/1 knapsack. Items are discrete — you can't take fractions.
+      </div>
+      <div class="sort-bar-wrap" id="sort-bars"></div>
+      <div style="margin-top:16px;font-size:10px;color:var(--text3);font-family:var(--mono)">Bars = v/w ratio | Highlighted = greedy picks</div>
+    </div>
+  </div>
+
+  <!-- GREEDY COMPARISON -->
+  <button class="collapsible-btn open" id="col-greedy" onclick="toggleCollapsible('greedy')">
+    <span class="chevron">▶</span> Greedy vs DP Counterexample
+  </button>
+  <div class="collapsible-content open" id="col-greedy-content">
+    <div id="greedy-compare"></div>
+  </div>
+
+</div>
+
+<!-- ════════════ RIGHT PANEL ════════════ -->
+<div class="right-panel">
+
+  <!-- ITEMS STRIP -->
+  <div class="card">
+    <div class="section-title" style="margin-bottom:10px">Items</div>
+    <div class="items-strip" id="items-strip"></div>
+  </div>
+
+  <!-- DP TABLE -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">DP Table — K[item][capacity]</div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">rows=items, cols=capacity</div>
+    </div>
+    <div class="dp-wrapper" id="dp-wrapper"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-area"></div>
+
+  <!-- OPERATION COUNTERS -->
+  <div class="card">
+    <div class="section-title" style="margin-bottom:10px">Live Operation Counters — DP</div>
+    <div class="op-counters">
+      <div class="op-chip"><div class="op-val" id="op-comparisons">0</div><div class="op-lbl">Comparisons</div></div>
+      <div class="op-chip"><div class="op-val" id="op-updates">0</div><div class="op-lbl">Table Updates</div></div>
+      <div class="op-chip"><div class="op-val" id="op-theory">0</div><div class="op-lbl">Theory O(n·W)</div></div>
+      <div class="op-chip"><div class="op-val" id="op-step">0</div><div class="op-lbl">Current Step</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       BRUTE FORCE EXPLORER
+  ══════════════════════════════════════════ -->
+  <div class="card" id="bf-card">
+    <div class="section-title" style="margin-bottom:10px;color:var(--accent3)">
+      Brute Force Explorer — O(2ⁿ)
+      <span style="margin-left:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:0;text-transform:none;font-family:var(--mono)">Enumerate every subset</span>
+    </div>
+
+    <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px;font-family:var(--mono)">
+      Brute force tries all <span id="bf-total-subsets" style="color:var(--accent3);font-weight:700">2ⁿ</span> possible subsets.
+      Each subset is checked against capacity W. The best valid subset wins.
+      Unlike DP, <b style="color:#f87171">no computation is reused</b> — exponential cost.
+    </div>
+
+    <!-- Controls -->
+    <div class="btn-row" style="margin-bottom:10px">
+      <button class="btn" style="border-color:var(--accent3);color:var(--accent3)" id="bf-btn-build" onclick="bfBuild()">⚡ Build BF Steps</button>
+      <button class="btn" id="bf-btn-prev" onclick="bfStepBack()" disabled>‹</button>
+      <button class="btn" id="bf-btn-next" onclick="bfStepForward()" disabled>›</button>
+      <button class="btn" id="bf-btn-play" onclick="bfTogglePlay()" disabled>▶ Play</button>
+      <button class="btn" id="bf-btn-end" onclick="bfJumpEnd()" disabled>⇥</button>
+      <button class="btn danger" onclick="bfReset()">↺</button>
+    </div>
+    <div class="slider-row" style="margin-bottom:10px">
+      <span style="font-size:11px;color:var(--text2)">Speed</span>
+      <input type="range" id="bf-speed-slider" min="0.25" max="4" step="0.25" value="1" oninput="bfUpdateSpeed(this.value)" style="accent-color:var(--accent3)"/>
+      <span class="slider-label" id="bf-speed-lbl" style="color:var(--accent3)">1×</span>
+    </div>
+
+    <!-- Progress -->
+    <div class="bf-progress-bar"><div class="bf-progress-fill" id="bf-prog" style="width:0%"></div></div>
+    <div class="step-counter" style="margin-bottom:10px;border-color:#3d2a00">
+      Subset <span id="bf-sc-cur" style="color:var(--accent3);font-weight:700">0</span> /
+      <span id="bf-sc-tot" style="color:var(--text2)">0</span>
+      &nbsp;|&nbsp; Best so far: <span id="bf-best-live" style="color:var(--accent4);font-weight:700">—</span>
+    </div>
+
+    <!-- Current subset display -->
+    <div class="bf-section">
+      <div class="bf-title">Current Subset Being Evaluated</div>
+      <div class="bf-subset-grid" id="bf-subset-grid">
+        <span style="color:var(--text3);font-family:var(--mono);font-size:11px">Build BF steps first…</span>
+      </div>
+      <div id="bf-exp-box" style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.6;padding:6px 8px;background:#0d0900;border:1px solid #3d2a00;border-radius:6px">
+        Awaiting brute force run…
+      </div>
+    </div>
+
+    <!-- BF Op counters -->
+    <div class="bf-stat-row">
+      <div class="bf-chip"><div class="bf-cv" id="bf-op-subsets">0</div><div class="bf-cl">Subsets Checked</div></div>
+      <div class="bf-chip"><div class="bf-cv" id="bf-op-checks">0</div><div class="bf-cl">Weight Checks</div></div>
+      <div class="bf-chip"><div class="bf-cv" id="bf-op-theory">0</div><div class="bf-cl">Theory 2ⁿ</div></div>
+      <div class="bf-chip"><div class="bf-cv" id="bf-op-best">—</div><div class="bf-cl">Best Value</div></div>
+    </div>
+
+    <!-- Subset enumeration tree -->
+    <div class="bf-section">
+      <div class="bf-title">Subset Log (last 30)</div>
+      <div class="bf-tree-wrap" id="bf-tree-wrap">
+        <div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:4px">No subsets evaluated yet.</div>
+      </div>
+    </div>
+
+    <!-- BF Result -->
+    <div id="bf-result-area"></div>
+
+    <!-- DP vs BF comparison -->
+    <div id="bf-vs-area"></div>
+  </div>
+
+  <!-- COMPLEXITY CHART — updated with BF actuals -->
+  <div class="card">
+    <div class="section-title" style="margin-bottom:10px">Complexity Growth Curve</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00e5ff"></div><span style="color:#00e5ff">O(n·W) — DP</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span style="color:#f59e0b">O(2ⁿ) — Brute Force</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div><span style="color:#7c3aed">DP Actual Ops</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span style="color:#ef4444">BF Actual Ops</span></div>
+    </div>
+    <div class="chart-wrap">
+      <svg id="complexity-svg" width="100%" height="220" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--text3);line-height:1.5;font-family:var(--mono)">
+      <span style="color:#f59e0b">⚠ Worst Case:</span> Brute force grows exponentially O(2ⁿ) while DP stays polynomial O(n·W).
+      Run both DP and BF to see <span style="color:#ef4444">actual BF ops</span> plotted against <span style="color:#7c3aed">actual DP ops</span>.
+    </div>
+  </div>
+
+  <!-- HISTORY TABLE -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">Step History</div>
+      <span style="font-size:10px;color:var(--text3)">Click a row to jump to that step</span>
+    </div>
+    <div class="history-wrap">
+      <table class="history-table" id="history-table">
+        <thead><tr><th>#</th><th>Item</th><th>Cap</th><th>Action</th><th>K[i][w]</th></tr></thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end right-panel -->
+</div><!-- end main -->
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let values=[], weights=[], cap=0, n=0;
+let dpTable=[], steps=[], currentStep=-1;
+let playing=false, playInterval=null;
+let speed=1;
+let opComparisons=0, opUpdates=0;
+const historyLog=[];
+const BASE_DELAY=600;
+
+// ═══════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════
+const PRESETS={
+  small:{v:[3,4,5,6],w:[2,3,4,5],c:5},
+  greedyfail:{v:[6,10,12],w:[1,2,3],c:4},  // greedy takes 6+10=16, DP takes 10+12=22
+  maxcap:{v:[10,20,30,40,50],w:[5,10,15,20,25],c:50},
+  worst:{v:[8,14,6,12,20,10,18,4],w:[3,5,2,4,7,3,6,2],c:15}
+};
+
+function applyPreset(key){
+  const p=PRESETS[key];
+  document.getElementById('inp-values').value=p.v.join(',');
+  document.getElementById('inp-weights').value=p.w.join(',');
+  document.getElementById('inp-cap').value=p.c;
+}
+
+// ═══════════════════════════════════════════════
+// BUILD SOLUTION
+// ═══════════════════════════════════════════════
+function buildSolution(){
+  resetAll(false);
+  try{
+    values=document.getElementById('inp-values').value.split(',').map(x=>+x.trim()).filter(x=>!isNaN(x)&&x>=0);
+    weights=document.getElementById('inp-weights').value.split(',').map(x=>+x.trim()).filter(x=>!isNaN(x)&&x>0);
+    cap=parseInt(document.getElementById('inp-cap').value)||10;
+    if(values.length!==weights.length||values.length===0){alert('Values and weights must be equal length and non-empty!');return;}
+    if(values.length>10){alert('Max 10 items for visualization clarity.');return;}
+    if(cap>25){alert('Max capacity 25 for table readability.');return;}
+    n=values.length;
+  }catch(e){alert('Invalid input. Please check your values.');return;}
+
+  opComparisons=0; opUpdates=0;
+  buildDPSteps();
+  renderItems();
+  renderDPTable();
+  renderPseudocode();
+  renderGreedyComparison();
+  renderSortBars();
+  updateComplexityChart(null, null);
+  enableControls();
+  renderHistory();
+  // update BF info
+  const bfTot=document.getElementById('bf-total-subsets');
+  if(bfTot)bfTot.textContent=Math.pow(2,n);
+  bfReset(true); // reset BF display when new problem loaded
+  document.getElementById('exp-box').innerHTML='<span class="highlight">Ready!</span> Use Next › or Play to step through the algorithm.';
+}
+
+function buildDPSteps(){
+  steps=[];
+  // init DP table (n+1) x (cap+1)
+  dpTable=Array.from({length:n+1},()=>new Array(cap+1).fill(0));
+
+  // Step 0 — init
+  steps.push({type:'init',dpSnap:snapDP(),explanation:'Initialize DP table. K[0][w]=0 for all w (0 items, no value). K[i][0]=0 for all i (0 capacity).',pseudoLine:0,item:-1,capacity:-1});
+
+  for(let i=1;i<=n;i++){
+    for(let w=0;w<=cap;w++){
+      const wi=weights[i-1], vi=values[i-1];
+      if(wi>w){
+        // can't take item
+        opComparisons++;
+        const prev=dpTable[i-1][w];
+        dpTable[i][w]=prev;
+        opUpdates++;
+        steps.push({
+          type:'skip',dpSnap:snapDP(),i,w,wi,vi,prev,val:prev,
+          pseudoLine:5,
+          explanation:`Item <span class="highlight">${i}</span> (val:<span class="val">${vi}</span>, wt:<span class="val">${wi}</span>) — weight ${wi} &gt; capacity ${w}. <span class="action">Can't include.</span> K[${i}][${w}] = K[${i-1}][${w}] = ${prev}`,
+          opC:opComparisons,opU:opUpdates
+        });
+      } else {
+        // compare include vs exclude
+        opComparisons++;
+        const exclude=dpTable[i-1][w];
+        const include=vi+dpTable[i-1][w-wi];
+        const chosen=Math.max(exclude,include);
+        dpTable[i][w]=chosen;
+        opUpdates++;
+        const action=include>exclude?'include':'exclude';
+        steps.push({
+          type:'compare',dpSnap:snapDP(),i,w,wi,vi,
+          exclude,include,chosen,action,
+          pseudoLine:action==='include'?7:6,
+          explanation:`Item <span class="highlight">${i}</span> (val:<span class="val">${vi}</span>, wt:<span class="val">${wi}</span>) in capacity <span class="val">${w}</span>:<br>
+          Exclude → K[${i-1}][${w}] = <span class="val">${exclude}</span><br>
+          Include → ${vi} + K[${i-1}][${w-wi}] = <span class="val">${include}</span><br>
+          <span class="action">→ ${action==='include'?'Include':'Exclude'} item ${i}. K[${i}][${w}] = <b>${chosen}</b></span>`,
+          opC:opComparisons,opU:opUpdates
+        });
+      }
+    }
+  }
+
+  // Traceback
+  steps.push({type:'traceback-start',dpSnap:snapDP(),explanation:'<span class="action">Backtracking</span> through DP table to find which items are selected.',pseudoLine:9,item:-1,capacity:-1,opC:opComparisons,opU:opUpdates});
+
+  const selected=[];
+  let i=n, w=cap;
+  while(i>0&&w>0){
+    if(dpTable[i][w]!==dpTable[i-1][w]){
+      selected.push(i-1);
+      steps.push({
+        type:'traceback',dpSnap:snapDP(),i,w,selectedSoFar:[...selected],
+        explanation:`K[${i}][${w}]=${dpTable[i][w]} ≠ K[${i-1}][${w}]=${dpTable[i-1][w]} → <span class="action">Item ${i} was included!</span> (val:${values[i-1]}, wt:${weights[i-1]})`,
+        pseudoLine:10,opC:opComparisons,opU:opUpdates
+      });
+      w-=weights[i-1];
+    } else {
+      steps.push({
+        type:'traceback',dpSnap:snapDP(),i,w,selectedSoFar:[...selected],
+        explanation:`K[${i}][${w}]=${dpTable[i][w]} = K[${i-1}][${w}]=${dpTable[i-1][w]} → <span class="action">Item ${i} was NOT included.</span> Move up.`,
+        pseudoLine:11,opC:opComparisons,opU:opUpdates
+      });
+    }
+    i--;
+  }
+
+  const totalVal=selected.reduce((s,idx)=>s+values[idx],0);
+  const totalWt=selected.reduce((s,idx)=>s+weights[idx],0);
+  steps.push({
+    type:'done',dpSnap:snapDP(),selected,totalVal,totalWt,
+    explanation:`<span class="action">✓ Done!</span> Optimal value = <span class="val">${totalVal}</span>. Items: ${selected.map(i=>`#${i+1}`).join(', ')} (total weight: ${totalWt}/${cap})`,
+    pseudoLine:12,opC:opComparisons,opU:opUpdates
+  });
+
+  updateStepDisplay();
+}
+
+function snapDP(){return dpTable.map(r=>[...r])}
+
+// ═══════════════════════════════════════════════
+// RENDER ITEMS
+// ═══════════════════════════════════════════════
+function renderItems(){
+  const strip=document.getElementById('items-strip');
+  strip.innerHTML='';
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div');
+    b.className='item-box';b.id=`item-${i}`;
+    b.innerHTML=`<span class="item-idx">#${i+1}</span>
+      <span class="item-val">${values[i]}</span>
+      <span class="item-wt">${weights[i]}kg</span>`;
+    strip.appendChild(b);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER DP TABLE
+// ═══════════════════════════════════════════════
+function renderDPTable(){
+  const wrap=document.getElementById('dp-wrapper');
+  wrap.innerHTML='';
+  const table=document.createElement('table');
+  table.className='dp-table';
+
+  // header row
+  const thead=document.createElement('thead');
+  const hr=document.createElement('tr');
+  const corner=document.createElement('th');corner.className='row-h';corner.textContent='i\\w';hr.appendChild(corner);
+  for(let w=0;w<=cap;w++){
+    const th=document.createElement('th');th.textContent=w;hr.appendChild(th);
+  }
+  thead.appendChild(hr);table.appendChild(thead);
+
+  // body
+  const tbody=document.createElement('tbody');
+  for(let i=0;i<=n;i++){
+    const tr=document.createElement('tr');
+    const rh=document.createElement('th');
+    rh.className='row-h';
+    rh.textContent=i===0?'0':i;
+    tr.appendChild(rh);
+    for(let w=0;w<=cap;w++){
+      const td=document.createElement('td');
+      td.id=`cell-${i}-${w}`;td.textContent='';
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);wrap.appendChild(table);
+}
+
+// ═══════════════════════════════════════════════
+// APPLY STEP
+// ═══════════════════════════════════════════════
+function applyStep(idx){
+  if(idx<0||idx>=steps.length)return;
+  currentStep=idx;
+  const step=steps[idx];
+
+  // update table cells
+  for(let i=0;i<=n;i++){
+    for(let w=0;w<=cap;w++){
+      const td=document.getElementById(`cell-${i}-${w}`);
+      if(!td)continue;
+      const v=step.dpSnap[i][w];
+      td.className='';
+      if(step.dpSnap[i][w]!==0||i===0){
+        td.textContent=v;td.classList.add('computed');
+      } else {td.textContent='';td.className='';}
+    }
+  }
+
+  // highlight current cell
+  if(step.i!==undefined&&step.i>0&&step.w!==undefined){
+    const td=document.getElementById(`cell-${step.i}-${step.w}`);
+    if(td){td.classList.add('current');td.classList.add('pop');}
+    // highlight items
+    for(let j=0;j<n;j++){
+      const b=document.getElementById(`item-${j}`);
+      if(b){b.className='item-box'+(j===step.i-1?' current':'');}
+    }
+  }
+
+  // traceback highlighting
+  if(step.type==='traceback'&&step.selectedSoFar){
+    step.selectedSoFar.forEach(idx=>{
+      const b=document.getElementById(`item-${idx}`);
+      if(b)b.classList.add('included');
+      const td=document.getElementById(`cell-${idx+1}-${step.w}`);
+    });
+  }
+  if(step.type==='done'&&step.selected){
+    step.selected.forEach(idx=>{
+      const b=document.getElementById(`item-${idx}`);
+      if(b){b.className='item-box included';}
+    });
+    renderResult(step);
+  }
+
+  // pseudocode
+  document.querySelectorAll('.pseudo-line').forEach(l=>l.classList.remove('active'));
+  const pl=document.getElementById(`pline-${step.pseudoLine}`);
+  if(pl){pl.classList.add('active');pl.scrollIntoView({block:'nearest',behavior:'smooth'});}
+
+  // explanation
+  document.getElementById('exp-box').innerHTML=step.explanation||'';
+
+  // op counters
+  if(step.opC!==undefined){document.getElementById('op-comparisons').textContent=step.opC;}
+  if(step.opU!==undefined){document.getElementById('op-updates').textContent=step.opU;}
+  document.getElementById('op-step').textContent=idx+1;
+  document.getElementById('op-theory').textContent=n*cap;
+
+  updateStepDisplay();
+  updateHistory(idx);
+  updateComplexityChart(step.opC||opComparisons+opUpdates, bfActualOps||null);
+}
+
+function renderResult(step){
+  const a=document.getElementById('result-area');
+  a.innerHTML=`<div class="result-banner">
+    <div class="result-value">${step.totalVal}</div>
+    <div class="result-detail">
+      <b>Optimal Value</b><br>
+      Items: ${step.selected.map(i=>`#${i+1}(v=${values[i]},w=${weights[i]})`).join(' + ')}<br>
+      Total weight: <b>${step.totalWt}</b> / ${cap} | Efficiency: <b>${(step.totalVal/step.totalWt).toFixed(2)}</b> val/kg
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// PSEUDOCODE
+// ═══════════════════════════════════════════════
+const PSEUDO=[
+  {code:'function knapsack(values, weights, W, n):', kw:'function',tip:'Entry point: solve knapsack for n items, capacity W'},
+  {code:'  K[0..n][0..W] ← 0        // init table', cm:true,tip:'Base cases: 0 items or 0 capacity → value 0'},
+  {code:'  for i from 1 to n:', kw:'for',tip:'Iterate over each item'},
+  {code:'    for w from 0 to W:', kw:'for',tip:'Iterate over each capacity from 0 to W'},
+  {code:'      if weights[i] > w:', kw:'if',tip:'Can we physically fit item i into capacity w?'},
+  {code:'        K[i][w] ← K[i-1][w]', tip:'Cannot include item i — it\'s too heavy. Inherit from above.'},
+  {code:'      else: exclude = K[i-1][w]', kw:'else',tip:'Value if we DON\'T take item i'},
+  {code:'           include = v[i]+K[i-1][w-wt[i]]', tip:'Value if we DO take item i (add its value + best for remaining capacity)'},
+  {code:'           K[i][w] ← max(exclude, include)', tip:'Optimal substructure: take the better choice'},
+  {code:'  // Traceback to find selected items', cm:true,tip:'After filling table, trace back to find which items were chosen'},
+  {code:'  while i>0 and w>0:', kw:'while',tip:'Walk back from K[n][W]'},
+  {code:'    if K[i][w] ≠ K[i-1][w]: item i taken', kw:'if',tip:'Value changed → item i was included. Subtract its weight.'},
+  {code:'    else: item i skipped', kw:'else',tip:'Value unchanged → item i was NOT included.'},
+  {code:'  return K[n][W]  // optimal value', kw:'return',tip:'The maximum achievable value for n items and capacity W'}
+];
+
+function renderPseudocode(){
+  const panel=document.getElementById('pseudo-panel');
+  panel.innerHTML=`<div class="pseudo-header"><span>knapsack_dp.pseudo</span><span>0/1 Knapsack DP</span></div><div class="pseudo-lines" id="pseudo-lines"></div>`;
+  const lines=document.getElementById('pseudo-lines');
+  PSEUDO.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='pseudo-line';d.id=`pline-${i}`;
+    let codeHtml=p.code;
+    if(p.cm)codeHtml=`<span class="cm">${p.code}</span>`;
+    else{
+      codeHtml=codeHtml.replace(/\b(function|for|if|else|while|return)\b/g,'<span class="kw">$1</span>');
+      codeHtml=codeHtml.replace(/\b(knapsack|max)\b/g,'<span class="fn">$1</span>');
+      codeHtml=codeHtml.replace(/\b([0-9]+)\b/g,'<span class="nm">$1</span>');
+    }
+    d.innerHTML=`<span class="ln">${String(i+1).padStart(2,' ')}</span><span class="code">${codeHtml}</span>
+    <div class="tooltip-box">${p.tip}</div>`;
+    lines.appendChild(d);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SORT BARS
+// ═══════════════════════════════════════════════
+function renderSortBars(){
+  if(!n){return;}
+  const ratios=values.map((v,i)=>({v,w:weights[i],ratio:v/weights[i],orig:i}));
+  const sorted=[...ratios].sort((a,b)=>b.ratio-a.ratio);
+
+  // greedy fill
+  let cap2=cap, greedyPicked=[];
+  for(const item of sorted){
+    if(item.w<=cap2){greedyPicked.push(item.orig);cap2-=item.w;}
+  }
+
+  const maxRatio=Math.max(...ratios.map(r=>r.ratio));
+  const bars=document.getElementById('sort-bars');
+  bars.innerHTML='';
+  sorted.forEach((item)=>{
+    const pct=item.ratio/maxRatio;
+    const bar=document.createElement('div');
+    bar.className='sort-bar'+(greedyPicked.includes(item.orig)?' highlighted':'');
+    bar.style.height=(pct*70+10)+'px';
+    bar.innerHTML=`<span class="bar-label">#${item.orig+1}<br>${item.ratio.toFixed(1)}</span>`;
+    bar.title=`Item #${item.orig+1}: val=${item.v} wt=${item.w} ratio=${item.ratio.toFixed(2)}`;
+    bars.appendChild(bar);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// GREEDY COMPARISON
+// ═══════════════════════════════════════════════
+function renderGreedyComparison(){
+  const container=document.getElementById('greedy-compare');
+  // Use a specific counterexample regardless of input
+  const ex={
+    v:[6,10,12],w:[1,2,3],c:4,
+    greedy:[0,1],  // items 1,2 (ratio: 6,5,4) → 16, weight 3
+    dp:[1,2]       // items 2,3 → 22, weight 5 — oops, let's pick correctly
+  };
+  // Recalculate for the fixed example
+  const gEx={v:[6,10,12],w:[1,2,3],c:4};
+  // Greedy by ratio: 6/1=6, 10/2=5, 12/3=4 → take #1(w1), #2(w2) → total w=3, val=16
+  // But optimal: #2+#3 = w=5>4, so #1+#3=w=4,val=18, or #1+#2=val=16,w=3 — #1+#3=18!
+  // DP: K[3][4]=18 by taking items 1+3
+  const greedyItems=[{idx:0,v:6,w:1},{idx:1,v:10,w:2}];
+  const dpItems=[{idx:0,v:6,w:1},{idx:2,v:12,w:3}];
+  const gVal=greedyItems.reduce((s,i)=>s+i.v,0);
+  const gWt=greedyItems.reduce((s,i)=>s+i.w,0);
+  const dVal=dpItems.reduce((s,i)=>s+i.v,0);
+  const dWt=dpItems.reduce((s,i)=>s+i.w,0);
+
+  container.innerHTML=`
+  <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">
+    Fixed counterexample: <b style="color:var(--text)">Items: (v=6,w=1), (v=10,w=2), (v=12,w=3)</b> | Capacity=4<br>
+    Greedy sorts by v/w: 6.0, 5.0, 4.0 — greedily picks highest ratio first.
+  </div>
+  <div class="compare-grid">
+    <div class="compare-card fail">
+      <h4>❌ Greedy Solution (v/w ratio)</h4>
+      ${greedyItems.map(i=>`<span class="item-tag active">#${i.idx+1} v=${i.v} w=${i.w}</span>`).join('')}
+      <div class="total-tag fail">Value: ${gVal} | Weight: ${gWt}/${gEx.c}</div>
+    </div>
+    <div class="compare-card win">
+      <h4>✓ DP Optimal Solution</h4>
+      ${dpItems.map(i=>`<span class="item-tag dp-pick">#${i.idx+1} v=${i.v} w=${i.w}</span>`).join('')}
+      <div class="total-tag win">Value: ${dVal} | Weight: ${dWt}/${gEx.c}</div>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.5;font-family:var(--mono)">
+    Greedy picked items #1+#2 (best ratios, val=16). DP finds #1+#3 (val=<span style="color:var(--accent4)">18</span>). 
+    <span style="color:#f87171">Greedy loses by ${dVal-gVal}.</span>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// COMPLEXITY CHART (SVG) — updated with BF actual
+// ═══════════════════════════════════════════════
+function updateComplexityChart(dpActual, bfActual){
+  const svg=document.getElementById('complexity-svg');
+  const W=600, H=220, PAD={t:15,r:20,b:30,l:55};
+  const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
+  const maxN=12;
+  const W_fixed=cap||10;
+
+  const dpVals=[], bfVals=[];
+  for(let nn=1;nn<=maxN;nn++){
+    dpVals.push({x:nn,y:nn*W_fixed});
+    bfVals.push({x:nn,y:Math.pow(2,nn)});
+  }
+  const candidates=[...bfVals.map(p=>p.y)];
+  if(dpActual)candidates.push(dpActual);
+  if(bfActual)candidates.push(bfActual);
+  const maxY=Math.max(...candidates)*1.1||1;
+  const scX=x=>(x-1)/(maxN-1)*cw+PAD.l;
+  const scY=y=>H-PAD.b-Math.min(y/maxY,1)*ch;
+  const toPath=pts=>pts.map((p,i)=>(i===0?'M':'L')+scX(p.x).toFixed(1)+','+scY(p.y).toFixed(1)).join(' ');
+
+  svg.innerHTML=`
+  <defs>
+    <clipPath id="chart-clip"><rect x="${PAD.l}" y="${PAD.t}" width="${cw}" height="${ch}"/></clipPath>
+  </defs>
+  ${[0,.25,.5,.75,1].map(f=>`<line x1="${PAD.l}" y1="${(H-PAD.b-f*ch).toFixed(0)}" x2="${W-PAD.r}" y2="${(H-PAD.b-f*ch).toFixed(0)}" stroke="#252a38" stroke-width="1"/>
+  <text x="${PAD.l-4}" y="${(H-PAD.b-f*ch+4).toFixed(0)}" fill="#4a5268" font-size="8" text-anchor="end" font-family="JetBrains Mono">${Math.round(maxY*f)}</text>`).join('')}
+  ${Array.from({length:maxN},(_,i)=>`<line x1="${scX(i+1).toFixed(0)}" y1="${PAD.t}" x2="${scX(i+1).toFixed(0)}" y2="${H-PAD.b}" stroke="#252a38" stroke-width="1"/>`).join('')}
+  <line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${H-PAD.b}" stroke="#4a5268" stroke-width="1.5"/>
+  <line x1="${PAD.l}" y1="${H-PAD.b}" x2="${W-PAD.r}" y2="${H-PAD.b}" stroke="#4a5268" stroke-width="1.5"/>
+  <text x="${W-PAD.r}" y="${H-PAD.b+14}" fill="#4a5268" font-size="9" text-anchor="end" font-family="JetBrains Mono">n</text>
+  <text x="${PAD.l-6}" y="${PAD.t+4}" fill="#4a5268" font-size="9" font-family="JetBrains Mono">ops</text>
+  <path d="${toPath(bfVals)}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3" clip-path="url(#chart-clip)"/>
+  <path d="${toPath(dpVals)}" fill="none" stroke="#00e5ff" stroke-width="2" clip-path="url(#chart-clip)"/>
+  ${dpActual&&n>0?`<circle cx="${scX(n).toFixed(0)}" cy="${scY(Math.min(dpActual,maxY)).toFixed(0)}" r="6" fill="#7c3aed" stroke="#0a0c10" stroke-width="2"/>
+  <text x="${(scX(n)+9).toFixed(0)}" y="${(scY(Math.min(dpActual,maxY))-5).toFixed(0)}" fill="#7c3aed" font-size="9" font-family="JetBrains Mono">DP=${dpActual}</text>`:''}
+  ${bfActual&&n>0?`<circle cx="${(scX(n)+6).toFixed(0)}" cy="${scY(Math.min(bfActual,maxY)).toFixed(0)}" r="6" fill="#ef4444" stroke="#0a0c10" stroke-width="2"/>
+  <text x="${(scX(n)+15).toFixed(0)}" y="${(scY(Math.min(bfActual,maxY))+14).toFixed(0)}" fill="#ef4444" font-size="9" font-family="JetBrains Mono">BF=${bfActual}</text>`:''}
+  ${Array.from({length:maxN},(_,i)=>`<text x="${scX(i+1).toFixed(0)}" y="${H-PAD.b+14}" fill="#4a5268" font-size="9" text-anchor="middle" font-family="JetBrains Mono">${i+1}</text>`).join('')}
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// BRUTE FORCE ENGINE
+// ═══════════════════════════════════════════════
+let bfSteps=[], bfCurrentStep=-1, bfPlaying=false, bfPlayInterval=null, bfSpeed=1;
+let bfSubsetsChecked=0, bfWeightChecks=0, bfBestValue=0, bfBestSubset=[], bfActualOps=0;
+
+function bfBuild(){
+  if(!n||!values.length){alert('Build DP steps first to set items!');return;}
+  if(n>20){alert('Brute force limited to 20 items for browser performance.');return;}
+  bfReset(false);
+  bfGenerateSteps();
+  bfEnableControls();
+  document.getElementById('bf-total-subsets').textContent=Math.pow(2,n);
+  bfApplyStep(0);
+}
+
+function bfGenerateSteps(){
+  bfSteps=[];
+  const total=Math.pow(2,n);
+  document.getElementById('bf-op-theory').textContent=total;
+
+  let bestVal=0, bestSubset=[], checksCount=0, subsetsCount=0;
+
+  // Init step
+  bfSteps.push({
+    subsetIdx:0,total,subset:[],val:0,wt:0,valid:false,
+    isNew:true,bestVal:0,bestSubset:[],
+    checks:0,subsets:0,
+    explanation:`Starting brute force. Will enumerate all <b style="color:var(--accent3)">${total}</b> subsets (2ⁿ = 2^${n}).`,
+    log:[]
+  });
+
+  const log=[];
+
+  for(let mask=0;mask<total;mask++){
+    subsetsCount++;
+    let subsetItems=[], totalVal=0, totalWt=0;
+    for(let bit=0;bit<n;bit++){
+      if(mask&(1<<bit)){
+        subsetItems.push(bit);
+        totalVal+=values[bit];
+        totalWt+=weights[bit];
+      }
+    }
+    checksCount++; // one weight check per subset
+    const valid=totalWt<=cap;
+    const isBest=valid&&totalVal>bestVal;
+    if(isBest){bestVal=totalVal;bestSubset=[...subsetItems];}
+
+    const bits=mask.toString(2).padStart(n,'0');
+    const logEntry={mask,bits,subset:subsetItems,val:totalVal,wt:totalWt,valid,isBest:isBest&&valid,bestVal};
+    log.push({...logEntry});
+
+    let exp='';
+    if(subsetItems.length===0){
+      exp=`Subset #${mask+1}: <b>Empty set</b> — value=0, weight=0. ✓ Valid but trivial.`;
+    } else {
+      const itemNames=subsetItems.map(i=>`#${i+1}(v=${values[i]},w=${weights[i]})`).join(' + ');
+      exp=`Subset #${mask+1}: {${itemNames}}<br>Total weight=${totalWt}/${cap} → <b style="color:${valid?'var(--accent4)':'#f87171'}">${valid?'✓ Fits':'✗ Over capacity!'}</b>`;
+      if(valid)exp+=`<br>Value=${totalVal} ${isBest?`→ <b style="color:#fff">🏆 New best!</b>`:''}`;
+    }
+
+    bfSteps.push({
+      subsetIdx:mask+1,total,
+      subset:subsetItems,val:totalVal,wt:totalWt,valid,isBest,
+      isNew:true,bestVal,bestSubset:[...bestSubset],
+      checks:checksCount,subsets:subsetsCount,
+      explanation:exp,
+      log:[...log].slice(-30)
+    });
+  }
+
+  // Final step
+  bfSteps.push({
+    subsetIdx:total,total,
+    subset:bestSubset,val:bestVal,wt:bestSubset.reduce((s,i)=>s+weights[i],0),valid:true,done:true,
+    bestVal,bestSubset:[...bestSubset],
+    checks:checksCount,subsets:subsetsCount,
+    explanation:`<b style="color:var(--accent4)">✓ Done!</b> Checked all ${total} subsets. Optimal = <b style="color:var(--accent3)">${bestVal}</b>. Items: ${bestSubset.map(i=>`#${i+1}`).join(', ')}`,
+    log:log.slice(-30)
+  });
+
+  bfActualOps=checksCount;
+}
+
+function bfApplyStep(idx){
+  if(idx<0||idx>=bfSteps.length)return;
+  bfCurrentStep=idx;
+  const step=bfSteps[idx];
+
+  // Subset grid
+  const grid=document.getElementById('bf-subset-grid');
+  grid.innerHTML='';
+  if(n===0){return;}
+  for(let i=0;i<n;i++){
+    const el=document.createElement('span');
+    el.className='bf-subset-item';
+    const included=step.subset.includes(i);
+    if(step.done&&step.bestSubset.includes(i)){el.classList.add('best');}
+    else if(included&&step.valid){el.classList.add('valid');}
+    else if(included&&!step.valid){el.classList.add('invalid');}
+    else if(included){el.classList.add('active');}
+    el.innerHTML=`#${i+1} <span style="opacity:.6">v${values[i]}/w${weights[i]}</span>`;
+    grid.appendChild(el);
+  }
+  if(step.subset.length===0){
+    const el=document.createElement('span');
+    el.style.cssText='color:var(--text3);font-family:var(--mono);font-size:11px';
+    el.textContent='∅ empty set';
+    grid.appendChild(el);
+  }
+
+  // Explanation
+  document.getElementById('bf-exp-box').innerHTML=step.explanation||'';
+
+  // Op counters
+  document.getElementById('bf-op-subsets').textContent=step.subsets||0;
+  document.getElementById('bf-op-checks').textContent=step.checks||0;
+  document.getElementById('bf-op-best').textContent=step.bestVal||0;
+  document.getElementById('bf-best-live').textContent=step.bestVal||(step.bestVal===0?'0':'—');
+
+  // Progress
+  const pct=((idx)/bfSteps.length*100).toFixed(1);
+  document.getElementById('bf-prog').style.width=pct+'%';
+  document.getElementById('bf-sc-cur').textContent=step.subsetIdx||0;
+  document.getElementById('bf-sc-tot').textContent=step.total||0;
+
+  // Log
+  renderBFLog(step.log||[], step.subsetIdx-1);
+
+  // Done?
+  if(step.done){
+    renderBFResult(step);
+    renderBFvsDP(step);
+  }
+
+  // Update complexity chart with BF actuals
+  updateComplexityChart(opComparisons+opUpdates, step.subsets||0);
+}
+
+function renderBFLog(log, currentMask){
+  const wrap=document.getElementById('bf-tree-wrap');
+  wrap.innerHTML='';
+  if(!log.length){wrap.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:4px">No subsets yet.</div>';return;}
+  log.forEach(entry=>{
+    const row=document.createElement('div');
+    row.className='bf-tree-row'+(entry.mask===currentMask?' bf-current':'')+(entry.isBest?' bf-best-row':'');
+    const statusIcon=!entry.valid?'<span class="bf-status" style="color:#f87171">✗ OW</span>':
+      entry.isBest?'<span class="bf-status" style="color:#fff">🏆</span>':
+      '<span class="bf-status" style="color:var(--accent4)">✓</span>';
+    const subsetStr=entry.subset.length?entry.subset.map(i=>`${i+1}`).join(','):'∅';
+    row.innerHTML=`<span class="bf-idx">#${entry.mask+1}</span>
+      <span class="bf-bits">${entry.bits}</span>
+      <span style="color:var(--text2);font-family:var(--mono);font-size:10px;min-width:60px">{${subsetStr}}</span>
+      <span class="bf-val">v=${entry.val}</span>
+      <span class="bf-wt">w=${entry.wt}</span>
+      ${statusIcon}`;
+    wrap.appendChild(row);
+  });
+  // scroll to bottom
+  wrap.scrollTop=wrap.scrollHeight;
+}
+
+function renderBFResult(step){
+  const area=document.getElementById('bf-result-area');
+  const items=step.bestSubset.map(i=>`#${i+1}(v=${values[i]},w=${weights[i]})`).join(' + ')||'none';
+  const totalWt=step.bestSubset.reduce((s,i)=>s+weights[i],0);
+  area.innerHTML=`<div class="bf-result-banner">
+    <div class="bf-result-val">${step.bestVal}</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.6">
+      <b style="color:var(--accent3)">BF Optimal Value</b><br>
+      Items: ${items}<br>
+      Weight: <b style="color:var(--text)">${totalWt}</b>/${cap} | Subsets checked: <b style="color:var(--text)">${step.subsets}</b>
+    </div>
+  </div>`;
+}
+
+function renderBFvsDP(bfStep){
+  const area=document.getElementById('bf-vs-area');
+  const dpOps=opComparisons+opUpdates;
+  const bfOps=bfStep.subsets;
+  const ratio=dpOps>0?(bfOps/dpOps).toFixed(1):'∞';
+  const dpItems=steps.length?steps[steps.length-1].selected||[]:[]; 
+  const dpVal=steps.length&&steps[steps.length-1].totalVal!==undefined?steps[steps.length-1].totalVal:'(run DP)';
+  const match=dpVal===bfStep.bestVal;
+
+  area.innerHTML=`<div style="margin-top:10px">
+    <div class="section-title" style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      DP vs Brute Force Comparison <span style="flex:1;height:1px;background:var(--border);display:block"></span>
+    </div>
+    <div class="bf-vs-grid">
+      <div class="vs-card dp-card">
+        <h5>✦ DP — O(n·W)</h5>
+        <div class="vs-stat">Operations: <b>${dpOps}</b></div>
+        <div class="vs-stat">Theory n·W: <b>${n*cap}</b></div>
+        <div class="vs-stat">Optimal value: <b style="color:var(--accent4)">${dpVal}</b></div>
+        <div class="vs-stat">Items chosen: <b>${dpItems.length||'—'}</b></div>
+      </div>
+      <div class="vs-card bf-card">
+        <h5>⚡ Brute Force — O(2ⁿ)</h5>
+        <div class="vs-stat">Operations: <b>${bfOps}</b></div>
+        <div class="vs-stat">Theory 2ⁿ: <b>${Math.pow(2,n)}</b></div>
+        <div class="vs-stat">Optimal value: <b style="color:var(--accent3)">${bfStep.bestVal}</b></div>
+        <div class="vs-stat">Subsets tried: <b>${bfStep.subsets}</b></div>
+      </div>
+    </div>
+    <div style="margin-top:8px;padding:8px 10px;background:${match?'#0a1a10':'#1a0808'};border:1px solid ${match?'var(--accent4)':'#7f1d1d'};border-radius:6px;font-family:var(--mono);font-size:11px;line-height:1.5">
+      ${match
+        ?`<span style="color:var(--accent4)">✓ Both algorithms agree:</span> Optimal = <b>${dpVal}</b>. BF used <b style="color:#f87171">${ratio}×</b> more operations than DP.`
+        :`<span style="color:#f87171">⚠ Results differ</span> — ensure DP has completed all steps first.`}
+      ${n<=6?`<br><span style="color:var(--text3)">For n=${n}: DP does ${n*cap} ops vs BF's ${Math.pow(2,n)} — DP is <b style="color:var(--accent4)">${(Math.pow(2,n)/(n*cap)).toFixed(1)}×</b> more efficient.</span>`:''}
+    </div>
+  </div>`;
+
+  // Update complexity chart with both actuals
+  updateComplexityChart(dpOps, bfOps);
+}
+
+// BF Playback
+function bfStepForward(){if(bfCurrentStep<bfSteps.length-1)bfApplyStep(bfCurrentStep+1);if(bfCurrentStep===bfSteps.length-1)bfStopPlay();}
+function bfStepBack(){if(bfCurrentStep>0)bfApplyStep(bfCurrentStep-1);}
+function bfJumpEnd(){bfApplyStep(bfSteps.length-1);bfStopPlay();}
+function bfTogglePlay(){if(bfPlaying)bfStopPlay();else bfStartPlay();}
+function bfStartPlay(){
+  bfPlaying=true;
+  const btn=document.getElementById('bf-btn-play');
+  btn.textContent='⏸ Pause';btn.classList.add('active');
+  const delay=BASE_DELAY/bfSpeed;
+  bfPlayInterval=setInterval(()=>{
+    if(bfCurrentStep>=bfSteps.length-1){bfStopPlay();return;}
+    bfApplyStep(bfCurrentStep+1);
+  },delay);
+}
+function bfStopPlay(){
+  bfPlaying=false;clearInterval(bfPlayInterval);
+  const btn=document.getElementById('bf-btn-play');
+  if(btn){btn.textContent='▶ Play';btn.classList.remove('active');}
+}
+function bfUpdateSpeed(v){
+  bfSpeed=parseFloat(v);
+  document.getElementById('bf-speed-lbl').textContent=bfSpeed+'×';
+  if(bfPlaying){bfStopPlay();bfStartPlay();}
+}
+function bfEnableControls(){
+  ['bf-btn-prev','bf-btn-next','bf-btn-play','bf-btn-end'].forEach(id=>{
+    document.getElementById(id).disabled=false;
+  });
+}
+function bfReset(clearUI=true){
+  bfStopPlay();
+  bfSteps=[];bfCurrentStep=-1;bfActualOps=0;
+  bfSubsetsChecked=0;bfWeightChecks=0;bfBestValue=0;bfBestSubset=[];
+  ['bf-btn-prev','bf-btn-next','bf-btn-play','bf-btn-end'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=true;
+  });
+  if(clearUI){
+    const g=document.getElementById('bf-subset-grid');
+    if(g)g.innerHTML='<span style="color:var(--text3);font-family:var(--mono);font-size:11px">Build BF steps first…</span>';
+    const e=document.getElementById('bf-exp-box');
+    if(e)e.innerHTML='Awaiting brute force run…';
+    ['bf-op-subsets','bf-op-checks','bf-op-best'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='0';});
+    const bl=document.getElementById('bf-best-live');if(bl)bl.textContent='—';
+    const bp=document.getElementById('bf-prog');if(bp)bp.style.width='0%';
+    const sc=document.getElementById('bf-sc-cur');if(sc)sc.textContent='0';
+    const st=document.getElementById('bf-sc-tot');if(st)st.textContent='0';
+    const tw=document.getElementById('bf-tree-wrap');
+    if(tw)tw.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:4px">No subsets yet.</div>';
+    const ra=document.getElementById('bf-result-area');if(ra)ra.innerHTML='';
+    const va=document.getElementById('bf-vs-area');if(va)va.innerHTML='';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════
+function updateHistory(cur){
+  const tbody=document.getElementById('history-body');
+  // add this step to log
+  const step=steps[cur];
+  if(step&&historyLog.length<200&&(historyLog.length===0||historyLog[historyLog.length-1].step!==cur)){
+    historyLog.push({step:cur,...step});
+    if(historyLog.length>20)historyLog.shift();
+  }
+  renderHistory(cur);
+}
+
+function renderHistory(cur){
+  const tbody=document.getElementById('history-body');
+  tbody.innerHTML='';
+  const last20=historyLog.slice(-20);
+  last20.forEach((h,idx)=>{
+    const tr=document.createElement('tr');
+    if(h.step===currentStep)tr.classList.add('current-row');
+    const action=h.type==='skip'?'Skip (too heavy)':h.type==='compare'?`${h.action||'compare'}`:h.type==='init'?'Init':h.type==='traceback'?'Traceback':h.type==='done'?'✓ Done':'';
+    tr.innerHTML=`<td>${h.step+1}</td><td>${h.i||'-'}</td><td>${h.w!==undefined?h.w:'-'}</td><td>${action}</td><td>${h.val!==undefined?h.val:(h.chosen!==undefined?h.chosen:'-')}</td>`;
+    tr.onclick=()=>applyStep(h.step);
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PLAYBACK CONTROLS
+// ═══════════════════════════════════════════════
+function stepForward(){
+  if(currentStep<steps.length-1)applyStep(currentStep+1);
+  if(currentStep===steps.length-1)stopPlay();
+}
+function stepBack(){if(currentStep>0)applyStep(currentStep-1);}
+function jumpToEnd(){applyStep(steps.length-1);stopPlay();}
+
+function togglePlay(){
+  if(playing)stopPlay();else startPlay();
+}
+function startPlay(){
+  playing=true;
+  document.getElementById('btn-play').textContent='⏸ Pause';
+  document.getElementById('btn-play').classList.add('active');
+  const delay=BASE_DELAY/speed;
+  playInterval=setInterval(()=>{
+    if(currentStep>=steps.length-1){stopPlay();return;}
+    applyStep(currentStep+1);
+  },delay);
+}
+function stopPlay(){
+  playing=false;clearInterval(playInterval);
+  const btn=document.getElementById('btn-play');
+  if(btn){btn.textContent='▶ Play';btn.classList.remove('active');}
+}
+function updateSpeed(v){
+  speed=parseFloat(v);
+  document.getElementById('speed-lbl').textContent=speed+'×';
+  if(playing){stopPlay();startPlay();}
+}
+function updateStepDisplay(){
+  const cur=Math.max(0,currentStep+1), tot=steps.length;
+  document.getElementById('sc-cur').textContent=cur;
+  document.getElementById('sc-tot').textContent=tot;
+  document.getElementById('header-step').textContent=`Step ${cur} / ${tot}`;
+  const pct=tot>0?((currentStep+1)/tot*100).toFixed(1):0;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('op-theory').textContent=n&&cap?n*cap:0;
+  document.getElementById('complexity-badge').textContent=n&&cap?`O(${n}·${cap})=O(${n*cap})`:'O(n·W)';
+}
+function enableControls(){
+  ['btn-prev','btn-next','btn-play','btn-end'].forEach(id=>{
+    document.getElementById(id).disabled=false;
+  });
+  applyStep(0);
+}
+
+// ═══════════════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════════════
+function resetAll(clearInputs=true){
+  stopPlay();
+  bfReset(true);
+  steps=[];currentStep=-1;opComparisons=0;opUpdates=0;
+  historyLog.length=0;
+  document.getElementById('dp-wrapper').innerHTML='';
+  document.getElementById('items-strip').innerHTML='';
+  document.getElementById('result-area').innerHTML='';
+  document.getElementById('history-body').innerHTML='';
+  document.getElementById('pseudo-panel').innerHTML='';
+  document.getElementById('greedy-compare').innerHTML='';
+  document.getElementById('sort-bars').innerHTML='';
+  document.getElementById('exp-box').innerHTML='Build steps to begin the walkthrough…';
+  document.getElementById('op-comparisons').textContent='0';
+  document.getElementById('op-updates').textContent='0';
+  document.getElementById('op-theory').textContent='0';
+  document.getElementById('op-step').textContent='0';
+  ['btn-prev','btn-next','btn-play','btn-end'].forEach(id=>{document.getElementById(id).disabled=true;});
+  document.getElementById('sc-cur').textContent='0';
+  document.getElementById('sc-tot').textContent='0';
+  document.getElementById('header-step').textContent='Step 0 / 0';
+  document.getElementById('prog-fill').style.width='0%';
+  updateComplexityChart(null, null);
+}
+
+// ═══════════════════════════════════════════════
+// COLLAPSIBLE
+// ═══════════════════════════════════════════════
+function toggleCollapsible(id){
+  const btn=document.getElementById(`col-${id}`);
+  const content=document.getElementById(`col-${id}-content`);
+  btn.classList.toggle('open');
+  content.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  updateComplexityChart(null, null);
+  document.querySelectorAll('.collapsible-content').forEach(c=>c.classList.add('open'));
+  document.querySelectorAll('.collapsible-btn').forEach(b=>b.classList.add('open'));
+  buildSolution();
+});
+</script>
+</body>
+</html>
